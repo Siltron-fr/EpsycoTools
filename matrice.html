@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Matrice de compatibilité</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-page="matrix">
+<div class="shell">
+  <div class="content">
+    <header class="bar">
+      <h1>Matrice de compatibilité</h1>
+      <div class="legend">
+        <span class="lg ok">Compatible</span>
+        <span class="lg warn">⚠ Exception</span>
+        <span class="lg bad">✕ Incompatible</span>
+        <span class="lg sel">Sélectionné</span>
+      </div>
+    </header>
+    <div class="split">
+      <main id="wrap"></main>
+      <aside>
+        <div class="ph"><h2>Sélection</h2><button class="btn sm" id="btnClear">Tout décocher</button></div>
+        <div id="panelBody"></div>
+      </aside>
+    </div>
+  </div>
+</div>
+<script src="matrix-data.js"></script>
+<script src="nav.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
