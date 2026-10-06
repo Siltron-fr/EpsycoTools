@@ -1,8 +1,10 @@
+/* Logique de la matrice. Les données et les codes viennent de matrix-data.js */
 const ICON = { bad: '✕', warn: '⚠' };
 const ANGLE = 60, SIN = Math.sin(ANGLE * Math.PI / 180), COS = Math.cos(ANGLE * Math.PI / 180);
 const CODE_KEYS = {};
 Object.keys(CODES).forEach(k => CODE_KEYS[k.toLowerCase()] = k);
 
+// Texte de la case -> clé de CODES ('' si vide). Un mot inconnu devient un ⚠ avec lui-même en message.
 function cellCode(v) {
   v = (v || '').replace(/\uFE0F/g, '').trim();
   if (!v) return '';
@@ -34,7 +36,7 @@ const $ = id => document.getElementById(id);
 const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const typeOf = c => c ? CODES[c].type : '';
 
-
+// Relation entre le job j et la sélection : { s: 'sel'|'bad'|'warn'|'ok'|'', reasons: [{from, code}] }
 function status(j) {
   if (!selected.size) return { s: '', reasons: [] };
   if (selected.has(j)) return { s: 'sel', reasons: [] };
@@ -70,25 +72,29 @@ function render() {
   fit();
 }
 
+const openState = {}; // mémorise les catégories dépliées / repliées
+const CATS = [['all', 'Tous les jobs'], ['sel', 'Sélection'], ['ok', 'Compatibles'], ['warn', 'Sous conditions'], ['bad', 'Incompatibles']];
+
+// Liste : Sélection, puis Compatibles (haut) -> Sous conditions -> Incompatibles (bas)
 function renderPanel(info) {
   const { jobs } = data;
-  const body = $('panelBody');
-  if (!selected.size) { body.innerHTML = '<span class="hint">Coche un job (ligne ou colonne) pour voir les compatibilités.</span>'; return; }
-  const g = { bad: [], warn: [], ok: [] };
-  info.forEach((x, j) => { if (g[x.s]) g[x.s].push(j); });
   const multi = selected.size > 1;
-  const item = (j, cls) => `<div class="it st-${cls}" data-job="${j}"><b>${esc(jobs[j])}</b>${info[j].reasons.map(r =>
-    `<small>${multi ? esc(jobs[r.from]) + ' : ' : ''}${ICON[typeOf(r.code)]} ${esc(CODES[r.code].message)}</small>`).join('')}</div>`;
-  let h = `<div class="selbox">${[...selected].map(i => `<span class="chip">${esc(jobs[i])}<button data-rm="${i}" aria-label="Retirer">×</button></span>`).join('')}</div>`;
-  if (g.bad.length)  h += `<section><h3 class="g bad">Incompatibles <i>${g.bad.length}</i></h3>${g.bad.map(j => item(j, 'bad')).join('')}</section>`;
-  if (g.warn.length) h += `<section><h3 class="g warn">Sous conditions <i>${g.warn.length}</i></h3>${g.warn.map(j => item(j, 'warn')).join('')}</section>`;
-  if (g.ok.length)   h += `<section><h3 class="g ok">Compatibles <i>${g.ok.length}</i></h3><div class="pills">${g.ok.map(j => `<span class="st-ok" data-job="${j}">${esc(jobs[j])}</span>`).join('')}</div></section>`;
-  body.innerHTML = h;
+  const g = { all: [], sel: [], ok: [], warn: [], bad: [] };
+  info.forEach((x, j) => (selected.size ? g[x.s] : g.all).push(j));
+  const item = (j, cat) => `<div class="it ${cat === 'all' ? '' : 'st-' + cat}" data-job="${j}">
+    <input type="checkbox" class="cb" tabindex="-1" ${selected.has(j) ? 'checked' : ''}>
+    <div><b>${esc(jobs[j])}</b>${(cat === 'warn' || cat === 'bad') ? info[j].reasons.map(r =>
+      `<small>${multi ? esc(jobs[r.from]) + ' : ' : ''}${ICON[typeOf(r.code)]} ${esc(CODES[r.code].message)}</small>`).join('') : ''}</div></div>`;
+  $('panelBody').innerHTML = CATS.filter(([k]) => g[k].length).map(([k, label]) =>
+    `<details class="cat ${k}" data-cat="${k}" ${openState[k] === false ? '' : 'open'}><summary>${label}<i>${g[k].length}</i></summary>
+     <div class="items">${g[k].map(j => item(j, k)).join('')}</div></details>`).join('');
 }
 
+// Cellules carrées, toutes de même taille, calculées pour tout faire tenir sans scroll.
 function fit() {
   const n = data.jobs.length;
   if (!n) return;
+  if ($('wrap').clientWidth < 60) return; // matrice repliée
   const w = $('wrap'), maxLen = Math.max(...data.jobs.map(s => s.length));
   const availW = w.clientWidth - 16, availH = w.clientHeight - 16;
   let fs = 11, label, colh, over, cell;
@@ -114,14 +120,20 @@ $('wrap').addEventListener('click', e => {
   const th = e.target.closest('th[data-job]');
   if (!th) return;
   if (e.target.tagName === 'INPUT') return toggle(+th.dataset.job);
-  if (e.target.closest('label')) return; 
+  if (e.target.closest('label')) return; // le label relaie le clic à la case
   toggle(+th.dataset.job);
 });
 $('panelBody').addEventListener('click', e => {
-  if (e.target.dataset.rm !== undefined) { selected.delete(+e.target.dataset.rm); return render(); }
   const it = e.target.closest('[data-job]');
   if (it) toggle(+it.dataset.job);
 });
+$('panelBody').addEventListener('toggle', e => { if (e.target.dataset.cat) openState[e.target.dataset.cat] = e.target.open; }, true);
+$('btnMatrix').onclick = () => {
+  const open = $('split').classList.toggle('open');
+  $('btnMatrix').textContent = open ? '▦ Masquer la matrice' : '▦ Afficher la matrice';
+  $('btnMatrix').setAttribute('aria-expanded', open);
+  fit();
+};
 $('btnClear').onclick = () => { selected.clear(); render(); };
 new ResizeObserver(fit).observe($('wrap'));
 render();

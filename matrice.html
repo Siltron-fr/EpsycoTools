@@ -9,19 +9,10 @@
 <body data-page="matrix">
 <div class="shell">
   <div class="content">
-    <header class="bar">
-      <h1>Matrice de compatibilité</h1>
-      <div class="legend">
-        <span class="lg ok">Compatible</span>
-        <span class="lg warn">⚠ Exception</span>
-        <span class="lg bad">✕ Incompatible</span>
-        <span class="lg sel">Sélectionné</span>
-      </div>
-    </header>
-    <div class="split">
+    <div class="split" id="split">
       <main id="wrap"></main>
       <aside>
-        <div class="ph"><h2>Sélection</h2><button class="btn sm" id="btnClear">Tout décocher</button></div>
+        <div class="ph"><button class="btn sm" id="btnMatrix" aria-expanded="false">▦ Afficher la matrice</button><button class="btn sm" id="btnClear">Tout décocher</button></div>
         <div id="panelBody"></div>
       </aside>
     </div>

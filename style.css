@@ -69,8 +69,10 @@ input[type=checkbox].cb:checked::after{content:"";width:55%;height:30%;border-le
 a.card:hover{border-color:var(--accent);transform:translateY(-2px)}
 /* panneau de sélection */
 .split{flex:1;min-height:0;display:flex;gap:10px}
-.split main{min-width:0}
-aside{width:300px;flex:none;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:12px;display:flex;flex-direction:column;gap:10px;min-height:0}
+.split main{display:none;min-width:0}
+.split.open main{display:flex}
+.split.open aside{flex:none;width:clamp(320px,34%,460px)}
+aside{flex:1;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:12px;display:flex;flex-direction:column;gap:10px;min-height:0}
 .ph{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .ph h2{font-size:15px;margin:0}
 .btn.sm{padding:3px 9px;font-size:12px}
@@ -86,10 +88,22 @@ aside{width:300px;flex:none;background:var(--card);border:1px solid var(--line);
 .it small{display:block;font-weight:400;opacity:.9;margin-top:2px}
 .pills{display:flex;flex-wrap:wrap;gap:5px}
 .pills span{border-radius:20px;padding:2px 9px;font-size:12px;cursor:pointer}
+/* liste par catégories dépliables */
+.cat summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:6px 4px;user-select:none}
+.cat summary::-webkit-details-marker{display:none}
+.cat summary::before{content:"▸";display:inline-block;transition:.15s}
+.cat[open] summary::before{transform:rotate(90deg)}
+.cat summary i{font-style:normal;border-radius:20px;padding:0 8px;background:var(--hl);color:var(--fg);font-weight:600}
+.cat.sel summary{color:var(--accent)}.cat.ok summary{color:var(--ok-fg)}.cat.warn summary{color:var(--warn-fg)}.cat.bad summary{color:var(--bad-fg)}
+.items{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px;padding:2px 0 10px}
+.it{display:flex;gap:9px;align-items:flex-start;padding:8px 10px;border-radius:10px;background:var(--cellbg);margin:0}
+.it .cb{--cb:16px;margin-top:2px}
+.it b{font-weight:600}
+#panelBody{gap:0}
 /* mobile : navbar en bas */
 @media (max-width:640px){
   .shell{flex-direction:column-reverse}
   .nav{width:100%;flex-direction:row;justify-content:center;padding:6px;border-right:0;border-top:1px solid var(--line)}
   .nav .brand{display:none}.nav a::after{display:none}
-  .content{padding:8px;gap:8px}.split{flex-direction:column}aside{width:auto;max-height:38%}.lg{font-size:11px}h1{font-size:15px}
+  .content{padding:8px;gap:8px}.split{flex-direction:column}.split.open aside{width:auto;max-height:42%}.lg{font-size:11px}h1{font-size:15px}
 }
