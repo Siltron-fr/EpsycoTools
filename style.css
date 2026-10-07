@@ -17,7 +17,7 @@ body{font:13px/1.4 var(--font);background:var(--bg);color:var(--fg);-webkit-font
 .content{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;padding:12px;gap:10px}
 /* navbar */
 .nav{width:68px;flex:none;background:var(--card);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:14px 0;gap:8px}
-.nav .brand{color:var(--accent);margin-bottom:10px}
+.nav .brand{color:var(--accent);margin-bottom:10px;width:50px;height:50px}.nav .brand img{width:100%;height:100%;object-fit:contain}
 .nav a{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;color:var(--mute);position:relative;transition:.15s;cursor:pointer}
 .nav a:hover{background:var(--hl);color:var(--accent)}
 .nav a.active{background:var(--accent);color:#fff;box-shadow:0 4px 12px rgba(79,107,255,.4)}
@@ -106,4 +106,31 @@ aside{flex:1;min-width:0;background:var(--card);border:1px solid var(--line);bor
   .nav{width:100%;flex-direction:row;justify-content:center;padding:6px;border-right:0;border-top:1px solid var(--line)}
   .nav .brand{display:none}.nav a::after{display:none}
   .content{padding:8px;gap:8px}.split{flex-direction:column}.split.open aside{width:auto;max-height:42%}.lg{font-size:11px}h1{font-size:15px}
+}
+ 
+/* ===== Feed d'accueil : hover agrandissement + inclinaison ===== */
+.feed{position:relative;flex:1;min-height:0}
+.tile{container-type:size;position:absolute;display:block;border-radius:18px;color:#fff;text-decoration:none;background:var(--cellbg);box-shadow:var(--shadow);animation:rise .5s var(--d) backwards;
+  transform:perspective(900px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg)) scale(var(--sc,1));
+  transition:transform .4s cubic-bezier(.2,.8,.2,1),box-shadow .4s;will-change:transform}
+@keyframes rise{from{opacity:0;translate:0 14px}}
+.tile.tilt{transition:transform .08s linear,box-shadow .4s}
+.tile:hover,.tile:focus-visible{--sc:1.04;box-shadow:0 24px 54px rgba(0,0,0,.38);z-index:5;outline:none}
+/* zone image : le clipping arrondi se fait ici, jamais de bords qui dépassent pendant l'animation */
+.media{position:absolute;inset:0;border-radius:inherit;overflow:hidden;isolation:isolate;transform:translateZ(0)}
+.media img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s cubic-bezier(.2,.8,.2,1)}
+/* légende : petit bandeau opaque, lisible sur n'importe quelle image, sans toucher à l'image */
+.cap{position:absolute;left:clamp(8px,3cqmin,14px);right:clamp(8px,3cqmin,14px);bottom:clamp(8px,3cqmin,14px);z-index:2;padding:clamp(7px,3cqmin,14px) clamp(10px,4cqmin,16px);border-radius:12px;max-height:70%;overflow:hidden;background:rgba(12,14,24,.86);box-shadow:0 6px 20px rgba(0,0,0,.35);opacity:0;transform:translateY(8px);transition:opacity .3s,transform .3s;pointer-events:none}
+.tile:hover .cap,.tile:focus-visible .cap{opacity:1;transform:none}
+.cap h3{margin:0;font-size:clamp(13px,6.5cqmin,28px);line-height:1.2;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.cap p{margin:4px 0 0;font-size:clamp(11px,3.8cqmin,16px);line-height:1.35;opacity:.9;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+.tag{position:absolute;top:clamp(8px,3cqmin,14px);left:clamp(8px,3cqmin,14px);z-index:2;padding:2px 10px;border-radius:20px;font-size:clamp(9px,3cqmin,12px);font-weight:600;background:rgba(12,14,24,.7);color:#fff}
+/* très petites cases : on garde seulement le titre */
+@container (max-height:120px){.cap p{display:none}}
+/* sans image : texte toujours visible sur le dégradé */
+.tile.noimg .cap{opacity:1;transform:none;background:none;box-shadow:none;padding:0;left:18px;right:18px;bottom:18px}
+.tile.noimg .cap h3{font-size:clamp(15px,8cqmin,34px);text-shadow:0 1px 8px rgba(0,0,0,.4)}
+@media (hover:none){
+  .cap{opacity:1;transform:none;background:rgba(12,14,24,.72)}.tile:not(.noimg) .cap p{margin:4px 0 0;font-size:clamp(11px,3.8cqmin,16px);line-height:1.35;opacity:.9;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+  .tile:hover{--sc:1}
 }
