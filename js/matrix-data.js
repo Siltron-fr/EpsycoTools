@@ -1,24 +1,24 @@
 const CODES = {
   'X':  { type: 'bad',  message: 'Incompatible' },
-  'E':  { type: 'warn', message: 'Exception Entreprise Patronale' },
+  '⚠':  { type: 'warn', message: 'Exception Entreprise Patronale' },
    'AbbattageXInge': { type: 'warn', message: 'Autorisé si vous n\'avez pas le job mineur' },
   '✕':  { type: 'bad',  message: 'Incompatible' }
 };
 
 const MATRIX_TSV = `	Abbatage	Agriculture	Agriculture Avancé	Apiculture	Artiste	Boucherie	Boulangerie	Boulangerie  avancée	Bricoleur	Chasse	Chimiste	Composite	Couture	Cuisine	Cuisine avancée	Cuisine FDC	Cuisine industrielle	Electronique	Fonte	Fonte avancée	Forgeron	Industrie	Ingé	Maçonnerie	Maçonnerie Avancée	Mécanique	Menuiserie	Menuisier Avancée	Mineur	Mixologie	Mouture	Pêche	Pétrole	Poissonnerie	Poterie	Travail du papier	Récolte	Travail du verre
-Abbatage																					E		AbbattageXInge												✕			
-Agriculture					✕		✕	✕					E	✕	✕	✕	✕												E	✕		✕						
-Agriculture Avancé					✕		✕	✕			✕		E	✕	✕	✕	✕												E	✕		✕						
+Abbatage																					⚠														✕			
+Agriculture					✕		✕	✕					⚠	✕	✕	✕	✕												⚠	✕		✕						
+Agriculture Avancé					✕		✕	✕			✕		⚠	✕	✕	✕	✕												⚠	✕		✕						
 Apiculture					✕		✕	✕						✕	✕	✕	✕											✕		✕								✕
 Artiste		✕	✕	✕																											✕						✕	
-Boucherie							✕	✕					✕	✕	✕	✕	✕				✕					E				✕	✕							
+Boucherie							✕	✕					✕	✕	✕	✕	✕				✕					⚠				✕	✕							
 Boulangerie		✕	✕	✕		✕																									✕	✕		✕			✕	
 Boulangerie  avancée		✕	✕	✕		✕																									✕	✕		✕			✕	
-Bricoleur																			✕	✕				E			✕								E			
+Bricoleur																			✕	✕				⚠			✕								⚠			
 Chasse																✕																						
-Chimiste			✕														✕								✕				E	✕								✕
+Chimiste			✕														✕								✕				⚠	✕								✕
 Composite																										✕							✕					
-Couture		E	E			✕												✕		✕		✕	E				✕						✕				✕	
+Couture		⚠	⚠			✕												✕		✕		✕	⚠				✕						✕				✕	
 Cuisine		✕	✕	✕		✕																									✕	✕		✕			✕	
 Cuisine avancée		✕	✕	✕		✕																									✕	✕		✕			✕	
 Cuisine FDC		✕	✕	✕		✕				✕																					✕	✕		✕			✕	
@@ -26,21 +26,21 @@ Cuisine industrielle		✕	✕	✕		✕					✕																				✕	✕		✕		
 Electronique													✕						✕	✕													✕					✕
 Fonte									✕									✕				✕	✕			✕							✕				✕	
 Fonte avancée									✕				✕					✕				✕		✕	✕	✕							✕		✕			
-Forgeron	E					✕																✕					✕	✕					✕					✕
+Forgeron	⚠					✕																✕					✕	✕					✕					✕
 Industrie													✕						✕	✕	✕												✕					✕
-Ingé	E												E						✕					✕			✕		E									
-Maçonnerie									E											✕			✕			E											✕	
+Ingé													⚠						✕					✕			✕		✕									
+Maçonnerie									⚠											✕			✕			⚠											✕	
 Maçonnerie Avancée											✕									✕																		
-Mécanique						E						✕							✕	✕				E				✕					✕					
+Mécanique						⚠						✕							✕	✕				⚠				✕					✕					
 Menuiserie									✕				✕								✕		✕															
 Menuisier Avancée				✕																	✕					✕												
-Mineur		E	E								E												E															
+Mineur		⚠	⚠								⚠												✕															
 Mixologie		✕	✕	✕		✕					✕																					✕		✕			✕	✕
 Mouture					✕	✕	✕	✕						✕	✕	✕	✕																			✕		
 Pêche		✕	✕				✕	✕						✕	✕	✕	✕													✕								
 Pétrole												✕	✕					✕	✕	✕	✕	✕				✕												✕
 Poissonnerie							✕	✕						✕	✕	✕	✕													✕								
-Poterie	✕								E											✕																		
+Poterie	✕								⚠											✕																		
 Travail du papier																															✕						✕	
 Récolte					✕		✕	✕					✕	✕	✕	✕	✕		✕					✕						✕						✕		
 Travail du verre				✕							✕							✕			✕	✕								✕			✕					`;
