@@ -35,6 +35,41 @@ const selected = new Set();
 const $ = id => document.getElementById(id);
 const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const typeOf = c => c ? CODES[c].type : '';
+// Recherche : insensible à la casse et aux accents
+const norm = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+let query = '';
+
+// ---- Catégories et prix (configurés dans matrix-data.js) ----
+const key = s => norm(String(s)).replace(/\s+/g, ' ');
+const STAR = '<svg class="star" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path fill="currentColor" d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4 6.1 20.5l1.2-6.5L2.5 9.4l6.6-.9z"/></svg>';
+const OTHER = { id: '_autre', name: 'Autres', icon: '📦' };
+const ALL_CATS = [...CATEGORIES, OTHER];
+const catById = Object.fromEntries(ALL_CATS.map(c => [c.id, c]));
+const catOf = {}, priceRule = {};
+Object.entries(JOB_CATEGORY).forEach(([n, id]) => {
+  if (!catById[id]) console.warn(`Catégorie inconnue « ${id} » pour le job « ${n} »`);
+  catOf[key(n)] = id;
+});
+Object.entries(PRICES).forEach(([n, r]) => priceRule[key(n)] = r);
+const jobCat = j => catById[catOf[key(data.jobs[j])]] || OTHER;
+const iconHtml = ic => /^https?:|\.(png|webp|svg|jpe?g|gif)(\?.*)?$/i.test(ic) ? `<img src="${esc(ic)}" alt="" loading="lazy">` : `<span>${esc(ic)}</span>`;
+const fmt = v => String(+v.toFixed(2));
+
+// Contexte donné aux règles de prix : qui est sélectionné ?
+function makeCtx() {
+  const names = new Set([...selected].map(i => key(data.jobs[i])));
+  return {
+    has: (...n) => n.some(x => names.has(key(x))),
+    all: (...n) => n.every(x => names.has(key(x))),
+    count: names.size
+  };
+}
+function priceOf(j, ctx) {
+  const r = priceRule[key(data.jobs[j])];
+  let v = r;
+  try { if (typeof r === 'function') v = r(ctx); } catch (e) { console.warn('Règle de prix en erreur pour', data.jobs[j], e); v = undefined; }
+  return v != null && Number.isFinite(+v) ? +v : DEFAULT_PRICE;
+}
 
 // Relation entre le job j et la sélection : { s: 'sel'|'bad'|'warn'|'ok'|'', reasons: [{from, code}] }
 function status(j) {
@@ -68,6 +103,9 @@ function render() {
     h += '</tr>';
   });
   $('wrap').innerHTML = h + '</tbody></table>';
+  const n = selected.size;
+  $('hint').textContent = n ? `${n} job${n > 1 ? 's' : ''} sélectionné${n > 1 ? 's' : ''}` : 'Coche un ou plusieurs jobs pour voir avec lesquels ils fonctionnent.';
+  $('btnClear').disabled = !n;
   renderPanel(info);
   fit();
 }
@@ -75,19 +113,45 @@ function render() {
 const openState = {}; // mémorise les catégories dépliées / repliées
 const CATS = [['all', 'Tous les jobs'], ['sel', 'Sélection'], ['ok', 'Compatibles'], ['warn', 'Sous conditions'], ['bad', 'Incompatibles']];
 
-// Liste : Sélection, puis Compatibles (haut) -> Sous conditions -> Incompatibles (bas)
+// Liste : Sélection, puis Compatibles -> Sous conditions -> Incompatibles ; chaque groupe est rangé par catégorie de job
 function renderPanel(info) {
   const { jobs } = data;
   const multi = selected.size > 1;
+  const ctx = makeCtx();
+  const prices = jobs.map((_, j) => priceOf(j, ctx));
   const g = { all: [], sel: [], ok: [], warn: [], bad: [] };
-  info.forEach((x, j) => (selected.size ? g[x.s] : g.all).push(j));
-  const item = (j, cat) => `<div class="it ${cat === 'all' ? '' : 'st-' + cat}" data-job="${j}">
+  info.forEach((x, j) => {
+    if (x.s !== 'sel' && query && !norm(jobs[j]).includes(query) && !norm(jobCat(j).name).includes(query)) return;
+    (selected.size ? g[x.s] : g.all).push(j);
+  });
+  const item = (j, cat) => `<div class="it ${cat === 'all' ? '' : 'st-' + cat}" data-job="${j}" tabindex="0" role="button">
     <input type="checkbox" class="cb" tabindex="-1" ${selected.has(j) ? 'checked' : ''}>
-    <div><b>${esc(jobs[j])}</b>${(cat === 'warn' || cat === 'bad') ? info[j].reasons.map(r =>
-      `<small>${multi ? esc(jobs[r.from]) + ' : ' : ''}${ICON[typeOf(r.code)]} ${esc(CODES[r.code].message)}</small>`).join('') : ''}</div></div>`;
-  $('panelBody').innerHTML = CATS.filter(([k]) => g[k].length).map(([k, label]) =>
-    `<details class="cat ${k}" data-cat="${k}" ${openState[k] === false ? '' : 'open'}><summary>${label}<i>${g[k].length}</i></summary>
-     <div class="items">${g[k].map(j => item(j, k)).join('')}</div></details>`).join('');
+    <div class="it-main"><b>${esc(jobs[j])}</b>${(cat === 'warn' || cat === 'bad') ? info[j].reasons.map(r =>
+      `<small>${multi ? esc(jobs[r.from]) + ' : ' : ''}${ICON[typeOf(r.code)]} ${esc(CODES[r.code].message)}</small>`).join('') : ''}</div>
+    <span class="price" title="Prix en étoiles">${STAR}${fmt(prices[j])}</span></div>`;
+  // Une colonne verticale par catégorie ; les colonnes se placent côte à côte (et passent à la ligne si la place manque)
+  const byCat = (list, k) => `<div class="jcs">` + ALL_CATS.map(c => [c, list.filter(j => jobCat(j) === c)]).filter(([, l]) => l.length).map(([c, l]) =>
+    `<section class="jc"><h4 class="jc-h"><span class="ico">${iconHtml(c.icon)}</span><span class="jc-n">${esc(c.name)}</span><i>${l.length}</i></h4>
+     <div class="items">${l.map(j => item(j, k)).join('')}</div></section>`).join('') + `</div>`;
+  const total = [...selected].reduce((a, j) => a + prices[j], 0);
+  const body = CATS.filter(([k]) => g[k].length).map(([k, label]) =>
+    `<details class="cat ${k}" data-cat="${k}" ${openState[k] === false ? '' : 'open'}><summary>${label}<i>${g[k].length}</i>${k === 'sel' ? `<span class="total" title="Total en étoiles de la sélection">${STAR}${fmt(total)}</span>` : ''}</summary>
+     ${byCat(g[k], k)}</details>`).join('');
+  $('panelBody').innerHTML = body || `<p class="empty">Aucun job ne correspond à « ${esc(query)} ».</p>`;
+  layoutCols();
+}
+
+// Colonnes de catégories : si une 2e ligne est nécessaire, les catégories sont réparties à parts égales
+// (ex. 7 catégories qui ne tiennent pas sur une ligne -> 4 + 3 au lieu de 6 + 1)
+const COL_MIN = 200, COL_GAP = 12, COL_MAX = 320;
+function layoutCols() {
+  document.querySelectorAll('.jcs').forEach(el => {
+    const n = el.children.length, W = el.clientWidth;
+    if (!n || !W) return; // groupe replié
+    const fit = Math.max(1, Math.floor((W + COL_GAP) / (COL_MIN + COL_GAP)));
+    const rows = Math.ceil(n / fit), cols = Math.ceil(n / rows);
+    el.style.gridTemplateColumns = `repeat(${cols}, minmax(0, ${COL_MAX}px))`;
+  });
 }
 
 // Cellules carrées, toutes de même taille, calculées pour tout faire tenir sans scroll.
@@ -127,13 +191,39 @@ $('panelBody').addEventListener('click', e => {
   const it = e.target.closest('[data-job]');
   if (it) toggle(+it.dataset.job);
 });
-$('panelBody').addEventListener('toggle', e => { if (e.target.dataset.cat) openState[e.target.dataset.cat] = e.target.open; }, true);
+$('panelBody').addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const it = e.target.closest('.it');
+  if (!it) return;
+  e.preventDefault();
+  const j = +it.dataset.job;
+  toggle(j);
+  const again = $('panelBody').querySelector(`.it[data-job="${j}"]`); if (again) again.focus(); // garde le focus clavier
+});
+$('search').addEventListener('input', e => { query = norm(e.target.value); renderPanel(data.jobs.map((_, j) => status(j))); });
+$('panelBody').addEventListener('toggle', e => { if (e.target.dataset.cat) { openState[e.target.dataset.cat] = e.target.open; layoutCols(); } }, true);
 $('btnMatrix').onclick = () => {
   const open = $('split').classList.toggle('open');
-  $('btnMatrix').textContent = open ? '▦ Masquer la matrice' : '▦ Afficher la matrice';
-  $('btnMatrix').setAttribute('aria-expanded', open);
+  const label = open ? 'Masquer la matrice' : 'Afficher la matrice';
+  $('btnMatrix').setAttribute('aria-pressed', open);
+  $('btnMatrix').setAttribute('aria-label', label);
+  $('btnMatrix').title = label;
   fit();
 };
 $('btnClear').onclick = () => { selected.clear(); render(); };
 new ResizeObserver(fit).observe($('wrap'));
+new ResizeObserver(layoutCols).observe($('panelBody'));
+
+// Étoiles : bouton pour tout masquer / afficher (choix mémorisé)
+let stars = typeof SHOW_STARS === 'undefined' ? true : !!SHOW_STARS;
+try { const v = localStorage.getItem('epsyco:stars'); if (v !== null) stars = v === '1'; } catch (e) {}
+function setStars(on, save) {
+  stars = on;
+  $('split').classList.toggle('no-stars', !on);
+  const b = $('btnStars'), label = on ? 'Masquer les étoiles' : 'Afficher les étoiles';
+  b.setAttribute('aria-pressed', on); b.setAttribute('aria-label', label); b.title = label;
+  if (save) try { localStorage.setItem('epsyco:stars', on ? '1' : '0'); } catch (e) {}
+}
+$('btnStars').onclick = () => setStars(!stars, true);
+setStars(stars, false);
 render();
