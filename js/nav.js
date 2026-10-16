@@ -12,10 +12,10 @@ const TOOLS = [
   const svg = p => `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
   const items = TOOLS.map(t => {
     const finalHref = t.href.startsWith('http://') || t.href.startsWith('https://') ? t.href : new URL(t.href, ROOT).href;
-    return `<a href="${finalHref}" class="${t.id === page ? 'active' : ''}" data-label="${t.label}" aria-label="${t.label}" ${t.blank ? 'target="_blank" rel="noopener"' : ''}>${svg(t.icon)}</a>`;
+    return `<a href="${finalHref}" class="${t.id === page ? 'active' : ''}" data-label="${t.label}" aria-label="${t.label}" ${t.id === page ? 'aria-current="page"' : ''} ${t.blank ? 'target="_blank" rel="noopener"' : ''}>${svg(t.icon)}</a>`;
   }).join('');
     const nav = document.createElement('nav');
   nav.className = 'nav';
-  nav.innerHTML = `<div class="brand"><img src="${ROOT}assets/logo.webp" alt="Logo"></div>${items}`;
+  nav.innerHTML = `<a class="brand" href="${ROOT}index.html" data-label="Accueil" aria-label="Accueil Epsyco"><img src="${ROOT}assets/logo.webp" alt=""></a>${items}`;
   document.querySelector('.shell').prepend(nav);
 })();
